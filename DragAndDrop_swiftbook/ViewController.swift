@@ -7,11 +7,11 @@
 
 import UIKit
 
-class ViewController: UIViewController, UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+class ViewController: UIViewController {
 
     @IBOutlet weak var collectionView: UICollectionView!
     
-    var colors: [UIColor] = [
+    private var colors: [UIColor] = [
         .systemCyan,
         .systemGreen,
         .systemBlue,
@@ -25,27 +25,35 @@ class ViewController: UIViewController, UICollectionViewDelegate, UICollectionVi
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        let gesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPressGesture(_:)))
-        collectionView.addGestureRecognizer(gesture)
-        
+        let longPressGesture = UILongPressGestureRecognizer(
+            target: self,
+            action: #selector(handleLongPressGesture)
+        )
+        collectionView.addGestureRecognizer(longPressGesture)
     }
     
-    @objc func handleLongPressGesture(_ gesture: UILongPressGestureRecognizer) {
-        
+    @objc private func handleLongPressGesture(_ gesture: UILongPressGestureRecognizer) {
+        let gestureLocation = gesture.location(in: collectionView)
         switch gesture.state {
         case .began:
-            guard let targetIndexPath = collectionView.indexPathForItem(at: gesture.location(in: collectionView)) else {
+            guard let targetIndexPath = collectionView.indexPathForItem(at: gestureLocation) else {
                 return
             }
             collectionView.beginInteractiveMovementForItem(at: targetIndexPath)
         case .changed:
-            collectionView.updateInteractiveMovementTargetPosition(gesture.location(in: collectionView))
+            collectionView.updateInteractiveMovementTargetPosition(gestureLocation)
         case .ended:
             collectionView.endInteractiveMovement()
         default:
             collectionView.cancelInteractiveMovement()
         }
+    }
+}
+
+// MARK: - UICollectionViewDataSource
+extension ViewController: UICollectionViewDataSource {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        colors.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -53,25 +61,22 @@ class ViewController: UIViewController, UICollectionViewDelegate, UICollectionVi
         cell.backgroundColor = colors[indexPath.row]
         return cell
     }
-    
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        colors.count
-    }
-    
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        CGSize(
-            width: collectionView.frame.size.width / 3.2,
-            height: collectionView.frame.size.width / 3.2
-        )
-    }
-    
-    func collectionView(_ collectionView: UICollectionView, canMoveItemAt indexPath: IndexPath) -> Bool {
-        true
-    }
-    
+}
+
+// MARK: - UICollectionViewDelegate
+extension ViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, moveItemAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
         let item = colors.remove(at: sourceIndexPath.row)
         colors.insert(item, at: destinationIndexPath.row)
     }
 }
 
+// MARK: - UICollectionViewDelegateFlowLayout
+extension ViewController: UICollectionViewDelegateFlowLayout {
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        CGSize(
+            width: collectionView.frame.width / 3.2,
+            height: collectionView.frame.width / 3.2
+        )
+    }
+}
